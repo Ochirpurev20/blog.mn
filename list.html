@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="style.css" />
+    <title>list</title>
+  </head>
+  <body>
+    <div class="container">
+      <ul class="navbar">
+        <li><a href="index.html">Эхлэл</a></li>
+        <li><a href="create.html">Шинээр үүсгэх</a></li>
+        <li><a href="list.html">Жагсаалт</a></li>
+      </ul>
+      <div id="content" class="content">
+        <table id="mainTable">
+          <thead>
+            <tr>
+              <th>Гарчиг</th>
+              <th>Агуулга</th>
+              <th>Огноо</th>
+              <th>Хэрэглэгч</th>
+              <th>Дэлгэрэнгүй</th>              
+              <th>Устгах</th>
+            </tr>
+            <tbody id="listTable">
+                            
+            </tbody>
+          </thead>
+        </table>
+      </div>
+    </div>   
+    <script>
+      var userData;
+      //buh post nii medeelliig duudah
+     fetch('http://blog.mn/api/read').then(res => res.json()).then(data => {
+        // console.log('res data: '+ JSON.stringify(data));
+        let tempData = data.results        
+        // console.log(`tempData iin urt ni ${tempData.length} turul ni ${typeof(tempData)} ugta ni ${tempData}`);
+         //duudagdaj irsen buh post nii medeelliig haruulah
+        let id =[]
+        let listTable = document.getElementById('listTable');
+        for (i=0 ; i <tempData.length ; i++) {
+          id[i]=tempData[i].id;
+          let row = listTable.insertRow(i);
+          let cell1 = row.insertCell(0);
+          let cell2 = row.insertCell(1);
+          let cell3 = row.insertCell(2);
+          let cell4 = row.insertCell(3);
+          let cell5 = row.insertCell(4);
+          let cell6 = row.insertCell(5);         
+          cell1.innerHTML = tempData[i].title.substring(0,8);
+          cell2.innerHTML = tempData[i].content.substring(0,15);
+          cell3.innerHTML = tempData[i].created_dt.substring(0,10);
+          let userNer ; 
+        //base deer bga id neriig medej bga uchraas shuud shalgav
+        if (tempData[i].create_user_id==1) userNer = 'ochir'
+        else if(tempData[i].create_user_id==2) userNer = 'chuka'
+        else if (tempData[i].create_user_id==3) userNer = 'badral';
+          cell4.innerHTML = userNer;
+          cell5.innerHTML = `<button class="seeMore" onclick="seeMore(${id[i]})">Дэлгэрэнгүй</button>` ;         
+          cell6.innerHTML = `<button class="deleteBtn" onclick="deleteRow(${id[i]})">Устгах</button>`;       
+        //  console.log('rowdata: ', tempData[i])
+        //   console.log(typeof(tempData[i]))
+        }        
+      })
+      let tempData; //delgerengui harah, edit hiih zeregt ashiglah postnii medeelliig tur hadgalah huvsagch
+      
+      //songoson 1 postiig delgerengui medeelliig duudaj, harahad duudah function
+      function seeMore(id) {
+        fetch('http://blog.mn/api/read/id', {
+          headers : { "Content-type": "application/json"},
+          method: "post",
+          body: JSON.stringify({id})
+        }).then(res => res.json()).then(data => {
+        let table1 = document.getElementById('mainTable');
+        tempData = data[0];        
+        table1.remove();
+        let createUser ;  
+        //base deer bga id neriig medej bga uchraas shuud shalgav
+        if (tempData.create_user_id==1) createUser = 'ochir'
+        else if(tempData.create_user_id==2) createUser = 'chuka'
+        else if (tempData.create_user_id==3) createUser = 'badral';
+        let updateuser;
+        if (tempData.update_user_id==1) updateuser = 'ochir'
+        else if(tempData.update_user_id==2) updateuser = 'chuka'
+        else if (tempData.update_user_id==3) updateuser = 'badral';
+        let realContent = ` 
+        <div id="realContent">
+        <h2 id = "title">${tempData.title}</h2>
+        <br />
+        <p id="content">
+          ${tempData.content}
+        </p>
+        <br />
+
+        <div id="new">
+          <p>Үүсгэсэн хэрэглэгч</p>
+          <p id="create_user">${updateuser}</p>
+      <p>Сүүлд зассан  огноо</p>
+      <p id="date1">${getTime()}</p>
+        </div>
+        <div id="oldInfo">
+          <p>Үүсгэсэн хэрэглэгч</p>
+          <p id="create_user">${createUser}</p>
+          <p>Үүссэн огноо</p>
+          <p id="date1">${tempData.created_dt}</p>
+        </div>        
+        </div>
+        `;
+        document.getElementById("content").insertAdjacentHTML('afterbegin', realContent)
+        if (!document.getElementById("editBtn")) {          
+          let editBtn = `<button class="editBtn" id="editBtn"onclick="editFunc('${createUser}')">edit</button>`          
+        document.getElementById("content").insertAdjacentHTML('beforeend', editBtn)  ;      
+        }
+        });         
+      }
+      
+      //delgetsend haruulsan medeelliig zasvar hiih
+      function editFunc(userNer) {       
+        //odoo haruulj baigaa contentuudiig div tei ni ustgah
+        document.getElementById('realContent').remove();
+        //shineer input dotor medeelluudiig haruulj bn
+        let editContent = `
+        <div id="editContent">
+        <input type="text" id="title1" name="title" value ="${tempData.title}"/>
+        <br /><br />
+        <textarea name="content" id="content1" cols="55" rows="10" >${tempData.content}</textarea>
+        <br />
+        <div id="new">
+      <p>Зассан хэрэглэгч</p>
+      <select name="editUser" id="editUser"> </select>
+      <p>Зассан огноо</p>
+      <p id="date1">${getTime()}</p>
+    </div>
+    <div id="oldInfo">
+      <p>Үүсгэсэн хэрэглэгч</p>
+      <p id="create_user">${userNer}</p>
+      <p>Үүссэн огноо</p>
+      <p id="date1">${tempData.created_dt}</p>
+    </div>
+        </div>
+        `;
+        document.getElementById("content").insertAdjacentHTML('afterbegin', editContent);
+
+        //medeelel dotorh zasvar hiij bga user g songohiin tuld base s use n medeelliig tataj, haruulj bn.
+        fetch("http://blog.mn/api/read/user")
+        .then((res) => res.json())
+        .then((data) => {
+          // console.log("res data: " + JSON.stringify(data));
+          let tempData = data.results;
+          // console.log(
+          //   tempData iin urt ni ${
+          //     tempData.length
+          //   } turul ni ${typeof tempData} ugta ni ${tempData}
+          // );
+          let id = [];
+          let selection = document.getElementById("editUser");
+          for (i = 0; i < tempData.length; i++) {
+            id[i] = tempData[i].id;
+            let option = `<option value="${tempData[i].id}"> ${tempData[i].name}</option>`;
+            selection.insertAdjacentHTML("beforeend", option);
+          }
+        });
+        //hadgalah toviig uusgeh
+        if (!document.getElementById("saveBtn")) {
+           let saveBtn2 = `<button class="saveBtn" onclick="saveFunc(${tempData.id})">save</button>`          
+        document.getElementById("content").insertAdjacentHTML('beforeend', saveBtn2)        
+        }
+        document.getElementById('editBtn').remove();
+        
+      }
+
+      function saveFunc(id){
+        // alert('save func dotroos')        
+        var title = document.getElementById("title1").value;
+        var content = document.getElementById("content1").value;
+        var date = getTime().substring(0,18);
+        var user = document.getElementById("editUser").value;
+        // console.log(id, title, content, date, user);
+        fetch("http://blog.mn/api/update", {
+          headers: {
+            "Content-Type": "application/json",
+          },
+          method: "put",
+          body: JSON.stringify({ id , title, content, date, user })
+        });
+        document.getElementById("title1").value="";
+        document.getElementById("content1").value="";
+        document.getElementById("editUser").value="";
+          
+      }
+
+      function deleteRow(id) {
+        // alert('deleteRow function s');
+        fetch('http://blog.mn/api/delete', {
+          headers : { "Content-type": "application/json"},
+          method: "delete",
+          body: JSON.stringify({id})
+        })
+        location.reload();
+      }
+      function getTime(){
+        var currentdate = new Date();
+      var datetime =
+        currentdate.getFullYear() +
+        "-" +
+        (currentdate.getMonth() + 1) +
+        "-" +
+        currentdate.getDate() +
+        "  " +
+        currentdate.getHours() +
+        ":" +
+        currentdate.getMinutes() +
+        ":" +
+        currentdate.getSeconds();
+        return datetime;
+      }
+      
+    </script>
+    
+  </body>
+</html>
